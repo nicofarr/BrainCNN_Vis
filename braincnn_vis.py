@@ -59,6 +59,7 @@ class EstimateTernaryInput(Loss):
         #self.filter_indices = utils.listify(filter_indices)
 
     def build_loss(self):
+
         img = K.cast(self.img,'float32')
         
         img = K.reshape(img,(64,64))
@@ -124,6 +125,7 @@ class Print_dyn(OptimizerCallback):
               .format(i + 1, pprint.pformat(named_losses), overall_loss))
         
         cur_alpha = K.eval(opt.alpha)
+        print('Current alpha : %f' % cur_alpha)
         
         #print('Iteration: {}, named_losses rel alpha: {}, overall loss: {}'
         #      .format(i + 1, pprint.pformat(named_losses/ cur_alpha), overall_loss))
@@ -312,7 +314,7 @@ class OptimizerDynamic(object):
 
 
 def visualize_activation_with_losses_dynamic(input_tensor, losses, wrt_tensor=None,alpha=1e-6,
-                                     seed_input=None, input_range=(0, 255),
+                                     seed_input=None, input_range=(-1., 1.),
                                      **optimizer_params):
     """Generates the `input_tensor` that minimizes the weighted `losses`. This function is intended for advanced
     use cases where a custom loss is desired.
@@ -350,9 +352,24 @@ def visualize_activation_with_losses_dynamic(input_tensor, losses, wrt_tensor=No
     #if isinstance(input_range[0], int) and isinstance(input_range[1], int):
     #    img = np.clip(img, input_range[0], input_range[1]).astype('uint8')
 
+    # Fetch names
+
+    loss_names = []
+    for losses in all_losses[0]:
+        loss_names.append(losses[0])
+
+    # Create numpy array
+    loss_array = np.zeros((len(all_losses), len(loss_names)))
+
+    for i, curloss in enumerate(all_losses):
+        for k, curcurloss in enumerate(curloss):
+            loss_array[i, k] = curcurloss[1]
+
+
+
     if K.image_data_format() == 'channels_first':
         img = np.moveaxis(img, 0, -1)
-    return img,all_losses,named_losses,overall_loss
+    return img,loss_array,loss_names
 
 
 # In[91]:
